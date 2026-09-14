@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Biblioteca</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --bg: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--primary);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        h2 { margin-top: 0; color: var(--primary); }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        button:hover { opacity: 0.9; }
+        button.btn-danger { background: var(--danger); }
+        button.btn-success { background: var(--success); }
+        button.btn-warning { background: var(--warning); color: white; }
+
+        .actions-cell {
+            display: flex;
+            gap: 5px;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+
+        th { background-color: #f1f1f1; }
+
+        .hidden { display: none !important; }
+
+        .alert {
+            padding: 10px 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .alert-error { background: #fde8e8; color: var(--danger); border: 1px solid #f8b4b4; }
+        .alert-success { background: #def7ec; color: var(--success); border: 1px solid #84e1bc; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <!-- ENCABEZADO -->
+    <header>
+        <h1>📚 Catálogo de Biblioteca</h1>
+        <div id="user-status">
+            <button id="btn-show-login" onclick="toggleView('login-card')">Iniciar Sesión</button>
+            <div id="session-info" class="hidden">
+                <span id="user-email"></span> (<strong id="user-role"></strong>)
+                <button class="btn-danger" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ALERTAS -->
+    <div id="alert-box" class="alert hidden"></div>
+
+    <!-- FORMULARIO DE LOGIN -->
+    <div id="login-card" class="card hidden">
+        <h2>Iniciar Sesión</h2>
+        <form id="form-login" onsubmit="login(event)">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Correo Electrónico:</label>
+                    <input type="email" id="login-email" required placeholder="admin@biblioteca.com">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña:</label>
+                    <input type="password" id="login-password" required>
+                </div>
+            </div>
+            <button type="submit">Ingresar</button>
+            <button type="button" style="background:#7f8c8d" onclick="toggleView(null)">Cancelar</button>
+        </form>
+    </div>
+
+    <!-- PANEL DE AGREGAR / EDITAR LIBRO (EDITORES) -->
+    <div id="editor-card" class="card hidden">
+        <h2 id="form-title">➕ Agregar Nuevo Libro</h2>
+        <form id="form-libro" onsubmit="guardarLibro(event)">
+            <!-- ID oculto para saber si creamos o editamos -->
+            <input type="hidden" id="libro-id">
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>EAN:</label>
+                    <input type="text" id="libro-ean">
+                </div>
+                <div class="form-group">
+                    <label>Título *:</label>
+                    <input type="text" id="libro-titulo" required>
+                </div>
+                <div class="form-group">
+                    <label>Autor:</label>
+                    <input type="text" id="libro-autor">
+                </div>
+                <div class="form-group">
+                    <label>Editorial:</label>
+                    <input type="text" id="libro-editorial">
+                </div>
+                <div class="form-group">
+                    <label>Materia:</label>
+                    <input type="text" id="libro-materia">
+                </div>
+                <div class="form-group">
+                    <label>Año:</label>
+                    <input type="number" id="libro-anio">
+                </div>
+                <div class="form-group">
+                    <label>Nueva Etiqueta:</label>
+                    <input type="text" id="libro-nueva-etiqueta">
+                </div>
+            </div>
+            <button type="submit" id="btn-submit-libro" class="btn-success">Guardar Libro</button>
+            <button type="button" id="btn-cancelar-edicion" class="hidden" style="background:#7f8c8d" onclick="limpiarFormularioLibro()">Cancelar Edición</button>
+        </form>
+    </div>
+
+    <!-- TABLA DE LIBROS -->
+    <div class="card">
+        <h2>Libros Disponibles</h2>
+        
+        <div class="form-group">
+            <input type="text" id="input-busqueda" placeholder="🔍 Buscar por título, autor o materia..." oninput="filtrarLibros()">
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>EAN</th>
+                        <th>Autor</th>
+                        <th>Título</th>
+                        <th>Editorial</th>
+                        <th>Materia</th>
+                        <th>Año</th>
+                        <th>Nueva Etiqueta</th>
+                        <th id="th-acciones" class="hidden">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-libros">
+                    <tr><td colspan="9">Cargando libros...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const API_URL = 'https://redempmatercdmx.great-site.net/';
+    let todosLosLibros = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarLibros();
+        restaurarSesionUI();
+    });
+
+    function toggleView(viewId) {
+        document.getElementById('login-card').classList.add('hidden');
+        if (viewId) document.getElementById(viewId).classList.remove('hidden');
+    }
+
+    function showAlert(mensaje, esError = false) {
+        const box = document.getElementById('alert-box');
+        box.className = `alert ${esError ? 'alert-error' : 'alert-success'}`;
+        box.textContent = mensaje;
+        box.classList.remove('hidden');
+        setTimeout(() => box.classList.add('hidden'), 4000);
+    }
+
+    function obtenerRol() {
+        const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+        return usuario.rol || null;
+    }
+
+    // 1. Cargar Libros (GET)
+    async function cargarLibros() {
+        try {
+            const res = await fetch(API_URL + 'libros.php', { credentials: 'include' });
+            todosLosLibros = await res.json();
+            renderizarTabla(todosLosLibros);
+        } catch (error) {
+            showAlert('Error al conectar con el servidor.', true);
+        }
+    }
+
+    // 2. Renderizar Filas de la Tabla
+    function renderizarTabla(libros) {
+        const tbody = document.getElementById('tabla-libros');
+        const esEditor = obtenerRol() === 'editor';
+        
+        document.getElementById('th-acciones').classList.toggle('hidden', !esEditor);
+        tbody.innerHTML = '';
+
+        if (libros.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="${esEditor ? 9 : 8}">No se encontraron libros.</td></tr>`;
+            return;
+        }
+
+        libros.forEach(libro => {
+            const tr = document.createElement('tr');
+            
+            let htmlAcciones = '';
+            if (esEditor) {
+                htmlAcciones = `
+                    <td class="actions-cell">
+                        <button class="btn-warning" onclick="prepararEdicion(${libro.id})">Editar</button>
+                        <button class="btn-danger" onclick="eliminarLibro(${libro.id})">Eliminar</button>
+                    </td>
+                `;
+            }
+
+            tr.innerHTML = `
+                <td>${libro.id}</td>
+                <td>${libro.ean || '-'}</td>
+                <td>${libro.autor || '-'}</td>
+                <td><strong>${libro.titulo}</strong></td>
+                <td>${libro.editorial || '-'}</td>
+                <td>${libro.materia || '-'}</td>
+                <td>${libro.anio || '-'}</td>
+                <td>${libro.nueva_etiqueta || '-'}</td>
+                ${htmlAcciones}
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // 3. Filtrar Libros
+    function filtrarLibros() {
+        const busqueda = document.getElementById('input-busqueda').value.toLowerCase().trim();
+        if (!busqueda) {
+            renderizarTabla(todosLosLibros);
+            return;
+        }
+
+        const resultados = todosLosLibros.filter(libro => {
+            const titulo = (libro.titulo || '').toLowerCase();
+            const autor = (libro.autor || '').toLowerCase();
+            const materia = (libro.materia || '').toLowerCase();
+
+            return titulo.includes(busqueda) || autor.includes(busqueda) || materia.includes(busqueda);
+        });
+
+        renderizarTabla(resultados);
+    }
+
+    // 4. Crear o Actualizar Libro (POST / PUT)
+    async function guardarLibro(e) {
+        e.preventDefault();
+
+        const id = document.getElementById('libro-id').value;
+        const metodo = id ? 'PUT' : 'POST';
+
+        const datosLibro = {
+            id: id ? parseInt(id) : null,
+            ean: document.getElementById('libro-ean').value,
+            titulo: document.getElementById('libro-titulo').value,
+            autor: document.getElementById('libro-autor').value,
+            editorial: document.getElementById('libro-editorial').value,
+            materia: document.getElementById('libro-materia').value,
+            anio: document.getElementById('libro-anio').value,
+            nueva_etiqueta: document.getElementById('libro-nueva-etiqueta').value
+        };
+
+        try {
+            const res = await fetch(API_URL + 'libros.php', {
+                method: metodo,
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(datosLibro)
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.exito) {
+                showAlert(data.mensaje);
+                limpiarFormularioLibro();
+                cargarLibros();
+            } else {
+                showAlert(data.error || 'Ocurrió un error al procesar el libro.', true);
+            }
+        } catch (error) {
+            showAlert('Error de conexión con el servidor.', true);
+        }
+    }
+
+    // 5. Preparar Formulario para Edición
+    function prepararEdicion(id) {
+        const libro = todosLosLibros.find(l => l.id === id);
+        if (!libro) return;
+
+        document.getElementById('libro-id').value = libro.id;
+        document.getElementById('libro-ean').value = libro.ean || '';
+        document.getElementById('libro-titulo').value = libro.titulo || '';
+        document.getElementById('libro-autor').value = libro.autor || '';
+        document.getElementById('libro-editorial').value = libro.editorial || '';
+        document.getElementById('libro-materia').value = libro.materia || '';
+        document.getElementById('libro-anio').value = libro.anio || '';
+        document.getElementById('libro-nueva-etiqueta').value = libro.nueva_etiqueta || '';
+
+        document.getElementById('form-title').textContent = '✏️ Editar Libro';
+        document.getElementById('btn-submit-libro').textContent = 'Actualizar Libro';
+        document.getElementById('btn-cancelar-edicion').classList.remove('hidden');
+
+        // Scroll suave al formulario
+        document.getElementById('editor-card').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // 6. Limpiar Formulario de Libro
+    function limpiarFormularioLibro() {
+        document.getElementById('form-libro').reset();
+        document.getElementById('libro-id').value = '';
+        document.getElementById('form-title').textContent = '➕ Agregar Nuevo Libro';
+        document.getElementById('btn-submit-libro').textContent = 'Guardar Libro';
+        document.getElementById('btn-cancelar-edicion').classList.add('hidden');
+    }
+
+    // 7. Eliminar Libro (DELETE)
+    async function eliminarLibro(id) {
+        if (!confirm('¿Estás seguro de que deseas eliminar este libro? Esta acción no se puede deshacer.')) {
+            return;
+        }
+
+        try {
+            const res = await fetch(API_URL + 'libros.php', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ id })
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.exito) {
+                showAlert(data.mensaje);
+                cargarLibros();
+            } else {
+                showAlert(data.error || 'No se pudo eliminar el libro.', true);
+            }
+        } catch (error) {
+            showAlert('Error de conexión al intentar eliminar.', true);
+        }
+    }
+
+    // 8. Autenticación (Login / Logout / Restaurar UI)
+    async function login(e) {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+
+        try {
+            const res = await fetch(API_URL + 'login.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.exito) {
+                localStorage.setItem('usuario', JSON.stringify(data.usuario));
+                restaurarSesionUI();
+                toggleView(null);
+                cargarLibros(); // Recargar para mostrar botones de acciones
+                showAlert(`Bienvenido, ${data.usuario.email}`);
+            } else {
+                showAlert(data.error || 'Credenciales incorrectas.', true);
+            }
+        } catch (error) {
+            showAlert('Error al intentar iniciar sesión.', true);
+        }
+    }
+
+    async function logout() {
+        try {
+            await fetch(API_URL + 'logout.php', { credentials: 'include' });
+            localStorage.removeItem('usuario');
+            limpiarFormularioLibro();
+            restaurarSesionUI();
+            cargarLibros(); // Recargar para ocultar botones de acciones
+            showAlert('Sesión cerrada correctamente.');
+        } catch (error) {
+            showAlert('Error al cerrar sesión.', true);
+        }
+    }
+
+    function restaurarSesionUI() {
+        const usuarioGuardado = localStorage.getItem('usuario');
+
+        if (usuarioGuardado) {
+            const usuario = JSON.parse(usuarioGuardado);
+            document.getElementById('btn-show-login').classList.add('hidden');
+            document.getElementById('session-info').classList.remove('hidden');
+            document.getElementById('user-email').textContent = usuario.email;
+            document.getElementById('user-role').textContent = usuario.rol;
+
+            if (usuario.rol === 'editor') {
+                document.getElementById('editor-card').classList.remove('hidden');
+            } else {
+                document.getElementById('editor-card').classList.add('hidden');
+            }
+        } else {
+            document.getElementById('btn-show-login').classList.remove('hidden');
+            document.getElementById('session-info').classList.add('hidden');
+            document.getElementById('editor-card').classList.add('hidden');
+        }
+    }
+</script>
+
+</body>
+</html>
